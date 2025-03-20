@@ -83,7 +83,7 @@ To run the project, ensure you have the following installed:
 ## 🛠️ **Setup Instructions**  
 1️⃣ **Clone the Repository**  
 ```sh
-git clone https://github.com/Temsegn/MyFinance_Management.git
+git clone https://github.com/BekaluEshete/finance.git
 cd finance
 flutter pub get
 flutter run
