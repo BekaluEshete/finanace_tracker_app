@@ -10,6 +10,7 @@ class AccountPage extends StatelessWidget {
       minTextAdapt: true,
       builder: (context, child) {
         return MaterialApp(
+          debugShowCheckedModeBanner: false,
           theme: ThemeData(
             primaryColor: const Color(0xFF6366F1),
             scaffoldBackgroundColor: const Color(0xFFF8FAFC),

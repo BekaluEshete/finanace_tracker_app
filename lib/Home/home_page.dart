@@ -1,3 +1,6 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:finance/auth/login.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../provider/transactionProvider.dart';
@@ -64,6 +67,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
     };
   }
 
+  // Fetch the user's first name from Firestore
+  Future<String> _getUserFirstName() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      try {
+        final doc = await FirebaseFirestore.instance
+            .collection('user_info')
+            .doc(user.uid)
+            .get();
+        if (doc.exists) {
+          return doc['first_name'] ?? 'User'; // Fallback to 'User' if not found
+        }
+      } catch (e) {
+        debugPrint("Error fetching user name: $e");
+      }
+    }
+    return 'User'; // Fallback if no user or error
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<TransactionProvider>(
@@ -91,32 +113,91 @@ class _DashboardScreenState extends State<DashboardScreen> {
               appBar: AppBar(
                 backgroundColor: Colors.white,
                 elevation: 0,
-                title: const Row(
-                  children: [
-                    const CircleAvatar(
-                      backgroundImage:
-                          NetworkImage("https://i.pravatar.cc/150?img=3"),
-                    ),
-                    const SizedBox(width: 10),
-                    const Text(
-                      "Hey, Jacob!",
-                      style: TextStyle(
-                        color: Colors.blue,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
+                title: FutureBuilder<String>(
+                  future: _getUserFirstName(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Row(
+                        children: [
+                          CircleAvatar(
+                            backgroundImage:
+                                NetworkImage("https://i.pravatar.cc/150?img=3"),
+                          ),
+                          SizedBox(width: 10),
+                          Text(
+                            "Loading...",
+                            style: TextStyle(
+                              color: Colors.blue,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      );
+                    }
+                    final userName = snapshot.data ?? 'User';
+                    return Row(
+                      children: [
+                        const CircleAvatar(
+                          backgroundImage:
+                              NetworkImage("https://i.pravatar.cc/150?img=3"),
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          "Hey, $userName!",
+                          style: const TextStyle(
+                            color: Colors.blue,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    );
+                  },
                 ),
                 actions: [
                   IconButton(
-                    icon: const Icon(Icons.notifications,
-                        color: Color.fromARGB(255, 73, 176, 205)),
+                    icon: Stack(
+                      children: [
+                        const Icon(
+                          Icons.notifications, // Normal notification icon
+                          color: const Color.fromARGB(255, 73, 176, 205),
+                          size: 37,
+                        ),
+                        Positioned(
+                          right: 6,
+                          top: 7,
+                          child: Container(
+                            width: 10,
+                            height: 10,
+                            decoration: const BoxDecoration(
+                              color: Colors.red,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                     onPressed: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
                             builder: (context) => NotificationsPage()),
+                      );
+                    },
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.exit_to_app),
+                    onPressed: () async {
+                      // Sign out from Firebase
+                      await FirebaseAuth.instance.signOut();
+
+                      // Navigate to the login screen immediately after sign-out
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) =>
+                                LoginPage()), // Replace with your SignInPage widget
                       );
                     },
                   ),
